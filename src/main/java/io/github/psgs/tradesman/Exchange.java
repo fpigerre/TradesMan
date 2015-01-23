@@ -8,6 +8,7 @@ import java.util.UUID;
 
 public class Exchange {
     UUID identifier;
+    String name;
     float accountHoldings;
     float exchangeHoldings;
     float currentRate;
@@ -19,11 +20,14 @@ public class Exchange {
      * @param exchangeHoldings The amount of exchange currency that the exchange possesses
      * @param currentRate      The exchange's current conversion rate
      */
-    public Exchange(UUID identifier, float accountHoldings, float exchangeHoldings, float currentRate) {
+    public Exchange(UUID identifier, String name, float accountHoldings, float exchangeHoldings, float currentRate) {
         this.identifier = identifier;
+        this.name = name;
         this.accountHoldings = accountHoldings;
         this.exchangeHoldings = exchangeHoldings;
         this.currentRate = currentRate;
+
+        investments = new HashMap<UUID, Float>();
     }
 
     /**
@@ -33,6 +37,24 @@ public class Exchange {
      */
     public UUID getIdentifier() {
         return this.identifier;
+    }
+
+    /**
+     * Retrieve the exchange's name
+     *
+     * @return The exchange's name as a string
+     */
+    public String getName() {
+        return this.name;
+    }
+
+    /**
+     * Alter's the exchange's name
+     *
+     * @param newName The exchange's new name
+     */
+    public void setName(String newName) {
+        this.name = newName;
     }
 
     /**
@@ -62,9 +84,13 @@ public class Exchange {
     public void buy(float amount, Account account) throws InsufficientFundsException {
         if (investments.containsKey(account.getIdentifier())) {
             if (exchangeHoldings >= amount) {
-                float currentInvestment = investments.get(account.getIdentifier());
-                investments.put(account.getIdentifier(), currentInvestment + amount);
-                account.withdraw(amount / currentRate);
+                if (account.holdings > amount / currentRate) {
+                    float currentInvestment = investments.get(account.getIdentifier());
+                    investments.put(account.getIdentifier(), currentInvestment + amount);
+                    account.withdraw(amount / currentRate);
+                } else {
+                    throw new InsufficientFundsException(account.getIdentifier(), "Account " + account.getIdentifier() + " does not have sufficient funds!");
+                }
             } else {
                 throw new InsufficientFundsException(getIdentifier(), "Exchange " + getIdentifier() + "does not have sufficient funds!");
             }
@@ -97,6 +123,19 @@ public class Exchange {
             }
         } else {
             throw new NoInvestmentException(account.getIdentifier(), "No investments for " + account.getIdentifier() + " could be found!");
+        }
+    }
+
+    /**
+     * Liquidates all an account's investments
+     *
+     * @param account The account whose funds are to be liquidated
+     * @throws InsufficientFundsException
+     * @throws NoInvestmentException
+     */
+    public void removeFunds(Account account) throws InsufficientFundsException, NoInvestmentException {
+        if (investments.containsKey(account.getIdentifier())) {
+            sell(investments.get(account.getIdentifier()), account);
         }
     }
 }

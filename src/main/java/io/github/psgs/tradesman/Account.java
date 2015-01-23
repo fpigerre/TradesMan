@@ -1,6 +1,7 @@
 package io.github.psgs.tradesman;
 
 import io.github.psgs.tradesman.exceptions.InsufficientFundsException;
+import io.github.psgs.tradesman.exceptions.NoInvestmentException;
 
 import java.util.HashMap;
 import java.util.UUID;
@@ -69,5 +70,30 @@ public class Account {
         } catch (InsufficientFundsException ex) {
             System.err.println(ex.getMessage());
         }
+    }
+
+    /**
+     * Liquidates an amount of foreign currency held by a certain exchange
+     *
+     * @param amount   The amount of exchange currency to sell
+     * @param exchange The exchange from which to sell
+     * @throws NoInvestmentException
+     * @throws InsufficientFundsException
+     */
+    public void capitalize(float amount, Exchange exchange) throws NoInvestmentException, InsufficientFundsException {
+        exchange.sell(amount, this);
+    }
+
+    /**
+     * Capitalizes upon all funds held in a particular exchange, and liquidates protected holdings held under the name of that exchange
+     *
+     * @param exchange The exchange from which to liquidate funds
+     * @throws NoInvestmentException
+     * @throws InsufficientFundsException
+     */
+    public void removeFunds(Exchange exchange) throws NoInvestmentException, InsufficientFundsException {
+        exchange.removeFunds(this);
+        holdings += protectedHoldings.get(exchange.getIdentifier());
+        protectedHoldings.remove(exchange.getIdentifier());
     }
 }
